@@ -1,8 +1,4 @@
-// Type definitions for @mpxjs/core
-// Project: https://didi.github.io/mpx/api.html
-// Definitions by: skyadmin <https://github.com/sky-admin>
-// Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
-// TypeScript Version: 2.8
+// TypeScript Version: 3.1
 
 // import typing files using '///'
 ///import wx from 'weixin-app'

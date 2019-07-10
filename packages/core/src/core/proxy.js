@@ -281,16 +281,18 @@ export default class MPXProxy {
       cb = undefined
     }
 
-    const isEmpty = isEmptyObject(data)
-    const resolve = this.renderTaskExecutor(isEmpty)
-    this.forceUpdateKeys = [] // 仅用于当次的render
-
     // 首次渲染时向模板中注入mpxCid
     if (!this.isMounted()) {
       data = Object.assign({
         mpxCid: this.uid
       }, data)
     }
+
+    const isEmpty = isEmptyObject(data)
+    const resolve = this.renderTaskExecutor(isEmpty)
+    this.forceUpdateKeys = [] // 仅用于当次的render
+
+
 
     if (isEmpty) {
       cb && cb()
