@@ -28,6 +28,8 @@ const isProductionLikeMode = options => {
 const outputFilename = '[name].js'
 const publicPath = '/'
 
+const a='1'
+
 function isChunkInPackage (chunkName, packageName) {
   return (new RegExp(`^${packageName}\\/`)).test(chunkName)
 }
