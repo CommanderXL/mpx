@@ -30,6 +30,9 @@ var a = 123
 const outputFilename = '[name].js'
 const publicPath = '/'
 
+const a='1'
+const b='2'
+
 function isChunkInPackage (chunkName, packageName) {
   return (new RegExp(`^${packageName}\\/`)).test(chunkName)
 }
