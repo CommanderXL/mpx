@@ -25,7 +25,7 @@ const isProductionLikeMode = options => {
   return options.mode === 'production' || !options.mode
 }
 
-var a = '123123'
+var a = 123
 
 const outputFilename = '[name].js'
 const publicPath = '/'
