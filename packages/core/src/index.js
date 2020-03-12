@@ -14,7 +14,7 @@ import {
 import * as platform from './platform'
 import createStore, { createStoreWithThis } from './core/createStore'
 import { injectMixins } from './core/injectMixins'
-import { watch } from './core/watcher'
+import { watch as innerWatch } from './core/watcher'
 import { extend } from './helper/utils'
 import { setConvertRule } from './convertor/convertor'
 import { getMixin } from './core/mergeOptions'
@@ -34,6 +34,13 @@ export function createPage (config, ...rest) {
 export function createComponent (config, ...rest) {
   const mpx = new EXPORT_MPX()
   platform.createComponent(extend({ proto: mpx.proto }, config), ...rest)
+}
+
+const watch = function (expr, handler, options) {
+  const watcher = innerWatch(context, expr, handler, options)
+  return function () {
+    watcher.destroy()
+  }
 }
 
 export { createStore, createStoreWithThis, toPureObject, observable, extendObservable, watch, createAction, getMixin }
