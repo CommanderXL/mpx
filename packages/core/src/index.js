@@ -14,6 +14,7 @@ import Vue from './vue'
 import { observe, set, del } from './observer/index'
 import { watch as watchWithVm } from './observer/watch'
 import implement from './core/implement'
+import MpxProxy from './core/proxy'
 
 export function createApp (config, ...rest) {
   const mpx = new EXPORT_MPX()
@@ -164,6 +165,7 @@ function factory () {
     this.proto = extend({}, this)
   }
 
+  MPX.__proxy = MpxProxy
   Object.assign(MPX, APIs)
   Object.assign(MPX.prototype, InstanceAPIs)
   // 输出web时在mpx上挂载Vue对象

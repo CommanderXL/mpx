@@ -19,7 +19,8 @@ import {
   aIsSubPathOfB,
   getFirstKey,
   makeMap,
-  hasOwn
+  hasOwn,
+  def
 } from '../helper/utils'
 import _getByPath from '../helper/getByPath'
 import { getRenderCallBack } from '../platform/patch'
@@ -29,14 +30,22 @@ import {
   BEFOREMOUNT,
   MOUNTED,
   UPDATED,
-  DESTROYED
+  DESTROYED,
+  INNER_LIFECYCLES
 } from './innerLifecycle'
 import { warn, error } from '../helper/log'
 
 let uid = 0
 
 export default class MPXProxy {
-  constructor (options, target) {
+  constructor (
+    options,
+    target = {
+      __getInitialData: () => {},
+      __render: () => {}
+    },
+    params = []
+  ) {
     this.target = target
     this.uid = uid++
     this.name = options.name || ''
@@ -57,6 +66,8 @@ export default class MPXProxy {
       this.forceUpdateAll = false // 下次是否需要强制更新全部渲染数据
       this.curRenderTask = null
     }
+
+    this.created(params)
   }
 
   created (params) {
@@ -142,13 +153,27 @@ export default class MPXProxy {
 
   initApi () {
     // 挂载扩展属性到实例上
-    proxy(this.target, this.options.proto, Object.keys(this.options.proto), true, (key) => {
-      if (this.ignoreProxyMap[key]) {
-        error(`The key [${key}] of mpx.prototype is a reserved keyword of miniprogram, please check and rename it!`, this.options.mpxFileResource)
-        return false
-      }
-      error(`The key [${key}] of mpx.prototype exist in the component/page instance already, please check your plugins!`, this.options.mpxFileResource)
-    })
+    if (__mpx_mode__ !== 'web') {
+      this.target.__mpxProxy = this
+      def(this.target, '$attrs', {})
+      def(this.target, '$options', this.options)
+      def(this.target, '_watchers', this._watchers)
+      def(this, '$destroy', this.destroyed)
+      def(this.target, '$emit', (...args) => {
+        this.target.triggEvent(...args)
+      })
+      def(this.target, '$on', () => {})
+      def(this.target, '_vnode', [])
+    }
+    if (this.options.proto) {
+      proxy(this.target, this.options.proto, Object.keys(this.options.proto), true, (key) => {
+        if (this.ignoreProxyMap[key]) {
+          error(`The key [${key}] of mpx.prototype is a reserved keyword of miniprogram, please check and rename it!`, this.options.mpxFileResource)
+          return false
+        }
+        error(`The key [${key}] of mpx.prototype exist in the component/page instance already, please check your plugins!`, this.options.mpxFileResource)
+      })
+    }
     // 挂载混合模式下createPage中的自定义属性，模拟原生Page构造器的表现
     if (this.options.__type__ === 'page' && !this.options.__pageCtor__) {
       proxy(this.target, this.options, this.options.mpxCustomKeysForBlend, undefined, (key) => {
@@ -207,6 +232,26 @@ export default class MPXProxy {
     let proxyedKeys = []
     // 获取包含data/props在内的初始数据，包含初始原生微信转换支付宝时合并props进入data的逻辑
     const initialData = this.target.__getInitialData(this.options) || {}
+    if (typeof data === 'function') {
+      data = data()
+
+      INNER_LIFECYCLES.forEach(lifecycle => {
+        const webLifecycle = lifecycle.replace(/_/g, '')
+        if (this.options[webLifecycle]) {
+          this.options[lifecycle] = this.options[webLifecycle]
+          delete this.options[webLifecycle]
+        }
+      })
+      // 收集 setup 返回的响应式数据，作为小程序渲染逻辑
+      if (this.target.__composition_api_state__) {
+        const { rawBindings = {} } = this.target.__composition_api_state__
+        Object.keys(rawBindings).forEach(name => {
+          if (hasOwn(this.target, name)) {
+            this.localKeysMap[name] = true
+          }
+        })
+      }
+    }
     // 之所以没有直接使用initialData，而是通过对原始dataOpt进行深clone获取初始数据对象，主要是为了避免小程序自身序列化时错误地转换数据对象，比如将promise转为普通object
     this.data = diffAndCloneA(data || {}).clone
     if (dataFn) {
@@ -234,6 +279,11 @@ export default class MPXProxy {
     this.data.mpxCid = this.uid
     this.localKeysMap.mpxCid = true
     observe(this.data, true)
+    if (__mpx_mode__ !== 'web') {
+      def(this.target, '$props', initialData)
+      def(this.target, '_data', this.data)
+      def(this, '_data', this.data)
+    }
     return proxyedKeys
   }
 
@@ -270,6 +320,13 @@ export default class MPXProxy {
 
   callUserHook (hookName, params) {
     const hook = this.options[hookName] || this.target[hookName]
+    if (Array.isArray(hook)) {
+      hook.forEach(item => {
+        if (typeof item === 'function') {
+          item.apply(this.target, params)
+        }
+      })
+    }
     if (typeof hook === 'function') {
       try {
         hook.apply(this.target, params)

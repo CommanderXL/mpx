@@ -28,8 +28,7 @@ function initProxy (context, rawOptions, params) {
     // 缓存options
     context.$rawOptions = rawOptions
     // 创建proxy对象
-    context.__mpxProxy = new MPXProxy(rawOptions, context)
-    context.__mpxProxy.created(params)
+    context.__mpxProxy = new MPXProxy(rawOptions, context, params)
   } else if (context.__mpxProxy.isDestroyed()) {
     context.__mpxProxy.reCreated(params)
   }
