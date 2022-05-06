@@ -160,7 +160,7 @@ export default class MPXProxy {
       def(this.target, '_watchers', this._watchers)
       def(this, '$destroy', this.destroyed)
       def(this.target, '$emit', (...args) => {
-        this.target.triggEvent(...args)
+        this.target.triggerEvent(...args)
       })
       def(this.target, '$on', () => {})
       def(this.target, '_vnode', [])
