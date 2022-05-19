@@ -232,6 +232,9 @@ export default class MPXProxy {
     let proxyedKeys = []
     // 获取包含data/props在内的初始数据，包含初始原生微信转换支付宝时合并props进入data的逻辑
     const initialData = this.target.__getInitialData(this.options) || {}
+    if (__mpx_mode__ !== 'web') {
+      def(this.target, '$props', initialData)
+    }
     if (typeof data === 'function') {
       data = data()
 
@@ -280,7 +283,6 @@ export default class MPXProxy {
     this.localKeysMap.mpxCid = true
     observe(this.data, true)
     if (__mpx_mode__ !== 'web') {
-      def(this.target, '$props', initialData)
       def(this.target, '_data', this.data)
       def(this, '_data', this.data)
     }
