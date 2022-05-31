@@ -234,6 +234,7 @@ export default class MPXProxy {
     const initialData = this.target.__getInitialData(this.options) || {}
     if (__mpx_mode__ !== 'web') {
       def(this.target, '$props', initialData)
+      def(this.target, '$root', this.target)
     }
     if (typeof data === 'function') {
       data = data()
