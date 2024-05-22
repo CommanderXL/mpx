@@ -16,6 +16,7 @@ module.exports = function setBaseWxml (el, options, meta) {
   const modeConfig = mpxConfig[options.mode]
   const directives = new Set([...Object.values(modeConfig.directive), 'slot'])
   const attrKeys = Object.keys(el.attrsMap).filter(key => !directives.has(key))
+  const { baseComponents, customComponents } = meta.runtimeInfo
 
   if (!options.isCustomComponent) {
     const optimizedInfo = getOptimizedComponentInfo(
@@ -28,8 +29,14 @@ module.exports = function setBaseWxml (el, options, meta) {
     if (optimizedInfo) {
       el.tag = optimizedInfo.nodeType
     }
-    Object.assign(meta.runtimeInfo.baseComponents, { [tag]: makeAttrsMap(attrKeys) })
+    if (!baseComponents[tag]) {
+      baseComponents[tag] = {}
+    }
+    Object.assign(baseComponents[tag], makeAttrsMap(attrKeys))
   } else {
-    Object.assign(meta.runtimeInfo.customComponents, { [tag]: makeAttrsMap(attrKeys) })
+    if (!customComponents[tag]) {
+      customComponents[tag] = {}
+    }
+    Object.assign(customComponents[tag], makeAttrsMap(attrKeys))
   }
 }
